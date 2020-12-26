@@ -91,81 +91,40 @@ class Labyrinth:
         for line in temp_labyrinth:
             print(line)
 
-        def step(current_position, direction, path=None):
-            print(current_position, temp_labyrinth[current_position[0]][current_position[1]], end=' ')
-            if path is None:
-                path = []
-            if temp_labyrinth[current_position[0]][current_position[1]]:
-                path.append(current_position)
-                if current_position == destination:
-                    possible_paths.append(path)
-                    print('added path to possibilities', possible_paths)
-                elif direction == 'up':
-                    print('sobe normal')
-                    temp_labyrinth[current_position[0]][current_position[1]] = False
-                    current_position = current_position[0] - 1, current_position[1]
-                    step(current_position, 'up', path)
-                    step(current_position, 'right', path)
-                    step(current_position, 'left', path)
-                elif direction == 'right':
-                    print('direita normal')
-                    temp_labyrinth[current_position[0]][current_position[1]] = False
-                    current_position = current_position[0], current_position[1] + 1
-                    step(current_position, 'up', path)
-                    step(current_position, 'right', path)
-                    step(current_position, 'down', path)
-                elif direction == 'down':
-                    print('desce normal')
-                    temp_labyrinth[current_position[0]][current_position[1]] = False
-                    current_position = current_position[0] + 1, current_position[1]
-                    step(current_position, 'right', path)
-                    step(current_position, 'down', path)
-                    step(current_position, 'left', path)
-                elif direction == 'left':
-                    print('esquerda normal')
-                    temp_labyrinth[current_position[0]][current_position[1]] = False
-                    current_position = current_position[0], current_position[1] - 1
-                    step(current_position, 'up', path)
-                    step(current_position, 'down', path)
-                    step(current_position, 'left', path)
+        def step(current_position, laby, path=[]):
+            path.append(current_position)
+            laby[current_position[0]][current_position[1]] = False
+            print(path)
+            print(current_position, laby[current_position[0]][current_position[1]])
+            laby = temp_labyrinth
+            for elem in path:
+                laby[elem[0]][elem[1]] = False
+            try:
+                while path[-1] not in [tuple([path[-2][0] - 1, path[-2][1]]),
+                                       tuple([path[-2][0], path[-2][1] + 1]),
+                                       tuple([path[-2][0] + 1, path[-2][1]]),
+                                       tuple([path[-2][0], path[-2][1] - 1])]:
+                    path.pop(-2)
+            except IndexError:
+                pass
+            if current_position == destination:
+                possible_paths.append(path)
             else:
-                temp_labyrinth[current_position[0]][current_position[1]] = False
-                path.pop()
-                # reverts the previous step
-                if direction == 'up':
-                    print('subiu pra falso, desce')
-                    # go down
-                    current_position = current_position[0] + 1, current_position[1]
-                    temp_labyrinth[current_position[0]][current_position[1]] = True
-                    step(current_position, 'right', path)
-                    step(current_position, 'down', path)
-                    step(current_position, 'left', path)
-                elif direction == 'right':
-                    # go left
-                    print('direita falsa, vai pra esquerda')
-                    current_position = current_position[0], current_position[1] - 1
-                    temp_labyrinth[current_position[0]][current_position[1]] = True
-                    step(current_position, 'up', path)
-                    step(current_position, 'down', path)
-                    step(current_position, 'left', path)
-                elif direction == 'down':
-                    # go up
-                    print('desceu pra falso, sobe')
-                    current_position = current_position[0] - 1, current_position[1]
-                    temp_labyrinth[current_position[0]][current_position[1]] = True
-                    step(current_position, 'right', path)
-                    step(current_position, 'down', path)
-                    step(current_position, 'left', path)
-                elif direction == 'left':
-                    # go right
-                    print('esquerda falsa, vai pra direita')
-                    current_position = current_position[0], current_position[1] + 1
-                    temp_labyrinth[current_position[0]][current_position[1]] = True
-                    step(current_position, 'up', path)
-                    step(current_position, 'right', path)
-                    step(current_position, 'down', path)
+                # Goes up
+                if laby[current_position[0] - 1][current_position[1]]:
+                    step(tuple([current_position[0] - 1, current_position[1]]), laby, path)
+                # Goes right
+                if laby[current_position[0]][current_position[1] + 1]:
+                    step(tuple([current_position[0], current_position[1] + 1]), laby, path)
+                # Goes down
+                if laby[current_position[0] + 1][current_position[1]]:
+                    step(tuple([current_position[0] + 1, current_position[1]]), laby, path)
+                # Goes left
+                if laby[current_position[0]][current_position[1] - 1]:
+                    step(tuple([current_position[0], current_position[1] - 1]), laby, path)
 
-        step(initial_position, 'up')
+        step(initial_position, temp_labyrinth)
+        print(len(possible_paths))
         return possible_paths
 
 
