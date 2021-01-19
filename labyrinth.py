@@ -1,4 +1,5 @@
 import sys
+import copy
 
 
 class Treasure:
@@ -39,13 +40,13 @@ class Labyrinth:
         """
         :type source_file: str
         :type exit_file: str
-        :param source_file: .txt file to be read with the parameters of the run
+        :param source_file: .txt file name to be read with the parameters of the run
         :param exit_file: optional parameter, creates an .txt output file for the chosen path
         """
         self.source_file = open(source_file, 'r').read().split('\n')
         self.initial_pos = None
         self.destination = None
-        self.labyrinth = []
+        self.labyrinth_matrix = []
         self.treasures = []
 
         # Creates an output file if needed
@@ -56,12 +57,12 @@ class Labyrinth:
         lab_size = [int(elem) for elem in lab_size]
 
         for line in self.source_file[1:lab_size[0] + 1]:
-            self.labyrinth.append([True if elem == '.' else False for elem in line])
-        for line in self.labyrinth:
+            self.labyrinth_matrix.append([True if elem == '.' else False for elem in line])
+        for line in self.labyrinth_matrix:
             line.insert(0, False)
             line.append(False)
-        self.labyrinth.insert(0, [False for _ in range(lab_size[1] + 2)])
-        self.labyrinth.append([False for _ in range(lab_size[1] + 2)])
+        self.labyrinth_matrix.insert(0, [False for _ in range(lab_size[1] + 2)])
+        self.labyrinth_matrix.append([False for _ in range(lab_size[1] + 2)])
 
         for line in self.source_file[lab_size[0] + 2:-2]:
             line = line.split(" ")
@@ -71,6 +72,16 @@ class Labyrinth:
         self.initial_pos = tuple([int(elem) + 1 for elem in self.initial_pos])
         self.destination = self.source_file[-1].split()
         self.destination = tuple([int(elem) + 1 for elem in self.destination])
+
+    def __str__(self):
+        s = ''
+        for line in self.labyrinth_matrix:
+            for elem in line:
+                if elem:
+                    s = s + '.'
+                else:
+                    s = s + 'X'
+        return s
 
     def aux_print(self, to_print):
         """
@@ -83,48 +94,55 @@ class Labyrinth:
 
     def possible_paths(self):
         possible_paths = []
-        temp_labyrinth = self.labyrinth
+        temp_labyrinth = copy.deepcopy(self.labyrinth_matrix)
         initial_position = self.initial_pos
         destination = self.destination
-        print(initial_position)
-        print(destination)
-        for line in temp_labyrinth:
-            print(line)
 
-        def step(current_position, laby, path=[]):
-            path.append(current_position)
-            laby[current_position[0]][current_position[1]] = False
-            print(path)
-            print(current_position, laby[current_position[0]][current_position[1]])
-            laby = temp_labyrinth
-            for elem in path:
-                laby[elem[0]][elem[1]] = False
-            try:
-                while path[-1] not in [tuple([path[-2][0] - 1, path[-2][1]]),
-                                       tuple([path[-2][0], path[-2][1] + 1]),
-                                       tuple([path[-2][0] + 1, path[-2][1]]),
-                                       tuple([path[-2][0], path[-2][1] - 1])]:
-                    path.pop(-2)
-            except IndexError:
-                pass
-            if current_position == destination:
-                possible_paths.append(path)
-            else:
-                # Goes up
-                if laby[current_position[0] - 1][current_position[1]]:
-                    step(tuple([current_position[0] - 1, current_position[1]]), laby, path)
-                # Goes right
-                if laby[current_position[0]][current_position[1] + 1]:
-                    step(tuple([current_position[0], current_position[1] + 1]), laby, path)
-                # Goes down
-                if laby[current_position[0] + 1][current_position[1]]:
-                    step(tuple([current_position[0] + 1, current_position[1]]), laby, path)
-                # Goes left
-                if laby[current_position[0]][current_position[1] - 1]:
-                    step(tuple([current_position[0], current_position[1] - 1]), laby, path)
+        def step(pos, labyrinth_matrix, path=None):
+
+            if path is None:
+                path = []
+
+            def enclosing_step(current_position, current_labyrinth, current_path):
+                # this function is needed to create a Python closure instance
+
+                def do_step():
+                    current_labyrinth[current_position[0]][current_position[1]] = False
+                    current_path.append(current_position)
+                    temp_path = copy.deepcopy(current_path)
+                    temp_labyrinth2 = copy.deepcopy(current_labyrinth)
+
+                    if current_position == destination:
+                        possible_paths.append(current_path)
+
+                    else:
+                        # Goes up if possible
+                        if current_labyrinth[current_position[0] - 1][current_position[1]]:
+                            next_position = current_position[0] - 1, current_position[1]
+                            go_up = enclosing_step(next_position, temp_labyrinth2, temp_path)
+                            go_up()
+                        # Goes right if possible
+                        if current_labyrinth[current_position[0]][current_position[1] + 1]:
+                            next_position = current_position[0], current_position[1] + 1
+                            go_right = enclosing_step(next_position, temp_labyrinth2, temp_path)
+                            go_right()
+                        # Goes down if possible
+                        if current_labyrinth[current_position[0] + 1][current_position[1]]:
+                            next_position = current_position[0] + 1, current_position[1]
+                            go_down = enclosing_step(next_position, temp_labyrinth2, temp_path)
+                            go_down()
+                        # Goes left if possible
+                        if current_labyrinth[current_position[0]][current_position[1] - 1]:
+                            next_position = current_position[0], current_position[1] - 1
+                            go_left = enclosing_step(next_position, temp_labyrinth2, temp_path)
+                            go_left()
+
+                return do_step  # returns the nested function
+
+            do_first_step = enclosing_step(pos, labyrinth_matrix, path)
+            do_first_step()
 
         step(initial_position, temp_labyrinth)
-        print(len(possible_paths))
         return possible_paths
 
 
@@ -134,4 +152,3 @@ except IndexError:
     temp = False
 
 a = Labyrinth(sys.argv[1], temp)
-a.possible_paths()
