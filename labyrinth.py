@@ -23,12 +23,25 @@ class Path:
     def __init__(self, path, labyrinth):
         """
         :type path: list
-        :type labyrinth: labyrinth
+        :type labyrinth: Labyrinth
         :param path: list of steps taken by the adventurer
         """
         self.path = path
-        # self.duration = duration
-        # self.inventory = inventory
+        self.inventory = []
+        self.total_value = 0
+        self.total_weight = 0
+        self.duration = 0
+        time_sqrt = 1
+        available_treasures = labyrinth.treasures
+        for i, pos in enumerate(path):
+            if pos in [available_treasures[i].pos for i, _ in enumerate(available_treasures)]:
+                index = [available_treasures[i].pos for i, _ in enumerate(available_treasures)].index(pos)
+                time_sqrt += float(available_treasures[index].weight) / 10
+                self.inventory.append(available_treasures[index])
+                self.total_value += available_treasures[index].value
+                self.total_weight += available_treasures[index].weight
+            if i > 0:
+                self.duration += time_sqrt**2
 
 
 class Labyrinth:
@@ -36,22 +49,16 @@ class Labyrinth:
     Class builds a labyrinth model and a treasure list
     """
 
-    def __init__(self, source_file, exit_file=False):
+    def __init__(self, source_file):
         """
         :type source_file: str
-        :type exit_file: str
         :param source_file: .txt file name to be read with the parameters of the run
-        :param exit_file: optional parameter, creates an .txt output file for the chosen path
         """
         self.source_file = open(source_file, 'r').read().split('\n')
         self.initial_pos = None
         self.destination = None
         self.labyrinth_matrix = []
         self.treasures = []
-
-        # Creates an output file if needed
-        if exit_file:
-            self.exit_file = open(exit_file, 'w+')
 
         lab_size = self.source_file[0].split()
         lab_size = [int(elem) for elem in lab_size]
@@ -64,35 +71,18 @@ class Labyrinth:
         self.labyrinth_matrix.insert(0, [False for _ in range(lab_size[1] + 2)])
         self.labyrinth_matrix.append([False for _ in range(lab_size[1] + 2)])
 
+        # Builds treasures list
         for line in self.source_file[lab_size[0] + 2:-2]:
             line = line.split(" ")
-            self.treasures.append(Treasure((int(line[0]), int(line[1])), int(line[2]), int(line[3])))
+            self.treasures.append(Treasure((int(line[0]) + 1, int(line[1]) + 1), int(line[2]), int(line[3])))
 
         self.initial_pos = self.source_file[-2].split()
         self.initial_pos = tuple([int(elem) + 1 for elem in self.initial_pos])
         self.destination = self.source_file[-1].split()
         self.destination = tuple([int(elem) + 1 for elem in self.destination])
 
-    def __str__(self):
-        s = ''
-        for line in self.labyrinth_matrix:
-            for elem in line:
-                if elem:
-                    s = s + '.'
-                else:
-                    s = s + 'X'
-        return s
-
-    def aux_print(self, to_print):
-        """
-        This function prints the parameters in the terminal and in a file if needed
-        :param to_print:  object to be printed
-        """
-        if self.exit_file:
-            self.exit_file.write(to_print)
-        print(to_print)
-
     def possible_paths(self):
+        possible_positions_paths = []
         possible_paths = []
         temp_labyrinth = copy.deepcopy(self.labyrinth_matrix)
         initial_position = self.initial_pos
@@ -112,8 +102,18 @@ class Labyrinth:
                     temp_path = copy.deepcopy(current_path)
                     temp_labyrinth2 = copy.deepcopy(current_labyrinth)
 
+                    try:
+                        if current_position not in [(current_path[-1][0]-1, current_path[-1][1]),
+                                                    (current_path[-1][0]+1, current_path[-1][1]),
+                                                    (current_path[-1][0], current_path[-1][1]+1),
+                                                    (current_path[-1][0], current_path[-1][1]-1)]:
+                            current_path.pop()
+                    except IndexError:
+                        pass
+
                     if current_position == destination:
-                        possible_paths.append(current_path)
+                        current_path.append(destination)
+                        possible_positions_paths.append(current_path)
 
                     else:
                         # Goes up if possible
@@ -137,18 +137,71 @@ class Labyrinth:
                             go_left = enclosing_step(next_position, temp_labyrinth2, temp_path)
                             go_left()
 
-                return do_step  # returns the nested function
+                return do_step
 
             do_first_step = enclosing_step(pos, labyrinth_matrix, path)
             do_first_step()
 
-        step(initial_position, temp_labyrinth)
+        step(initial_position, temp_labyrinth)  # Builds the possible_positions_paths
+
+        for elem in possible_positions_paths:
+            possible_paths.append(Path(elem, self))
+
         return possible_paths
 
 
-try:
-    temp = sys.argv[3]
-except IndexError:
-    temp = False
+def path_option(option, labyrinth):
+    """
+    :type option: int
+    :type labyrinth: Labyrinth
+    """
+    possible_paths = labyrinth.possible_paths()
 
-a = Labyrinth(sys.argv[1], temp)
+    # Shortest path
+    if option == 1:
+        shortest_dist = min([len(elem.path) for elem in possible_paths])
+        index = [len(elem.path) for elem in possible_paths].index(shortest_dist)
+        return possible_paths[index]
+    # Longest path
+    elif option == 2:
+        longest_dist = max([len(elem.path) for elem in possible_paths])
+        index = [len(elem.path) for elem in possible_paths].index(longest_dist)
+        return possible_paths[index]
+    # Most valuable path
+    elif option == 3:
+        most_valuable = max([elem.total_value for elem in possible_paths])
+        index = [elem.total_value for elem in possible_paths].index(most_valuable)
+        return possible_paths[index]
+    elif option == 4:
+        fastest = min([elem.duration for elem in possible_paths])
+        index = [elem.duration for elem in possible_paths].index(fastest)
+        return possible_paths[index]
+    else:
+        print('Invalid option')
+
+
+def aux_print(temp, to_print):
+    """
+    This function prints the parameters in the terminal and in a file if needed
+    :type temp: TextIO
+    :type to_print:  Any
+    """
+    if temp:
+        temp.write(to_print)
+    print(to_print, end='')
+
+
+try:
+    exit_file = open(sys.argv[3], 'w+')
+except IndexError:
+    exit_file = False
+
+a = Labyrinth(sys.argv[1])
+chosen_path = path_option(int(sys.argv[2]), a)
+aux_print(exit_file, str(len(chosen_path.path)) + ' ' + str(chosen_path.duration) + '\n')
+for elem in chosen_path.path:
+    aux_print(exit_file, str(elem[0] - 1) + ' ' + str(elem[1] - 1) + '\n')
+aux_print(exit_file, str(len(chosen_path.inventory)) + ' ' + str(chosen_path.total_value) + ' ' +
+          str(chosen_path.total_weight) + '\n')
+for elem in chosen_path.inventory:
+    aux_print(exit_file, str(elem.pos[0] - 1) + ' ' + str(elem.pos[1] - 1) + '\n')
