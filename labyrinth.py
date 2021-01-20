@@ -34,14 +34,14 @@ class Path:
         time_sqrt = 1
         available_treasures = labyrinth.treasures
         for x, pos in enumerate(path):
+            if x > 0:
+                self.duration += time_sqrt**2
             if pos in [available_treasures[x].pos for x, _ in enumerate(available_treasures)]:
                 index = [available_treasures[x].pos for x, _ in enumerate(available_treasures)].index(pos)
-                time_sqrt += float(available_treasures[index].weight) / 10
+                time_sqrt += (float(available_treasures[index].weight) / 10)
                 self.inventory.append(available_treasures[index])
                 self.total_value += available_treasures[index].value
                 self.total_weight += available_treasures[index].weight
-            if x > 0:
-                self.duration += time_sqrt**2
 
 
 class Labyrinth:
@@ -102,14 +102,11 @@ class Labyrinth:
                     temp_path = copy.deepcopy(current_path)
                     temp_labyrinth2 = copy.deepcopy(current_labyrinth)
 
-                    try:
-                        if current_position not in [(current_path[-1][0]-1, current_path[-1][1]),
-                                                    (current_path[-1][0]+1, current_path[-1][1]),
-                                                    (current_path[-1][0], current_path[-1][1]+1),
-                                                    (current_path[-1][0], current_path[-1][1]-1)]:
-                            current_path.pop()
-                    except IndexError:
-                        pass
+                    if current_position not in [(current_path[-1][0]-1, current_path[-1][1]),
+                                                (current_path[-1][0]+1, current_path[-1][1]),
+                                                (current_path[-1][0], current_path[-1][1]+1),
+                                                (current_path[-1][0], current_path[-1][1]-1)]:
+                        current_path.pop()
 
                     if current_position == destination:
                         current_path.append(destination)
