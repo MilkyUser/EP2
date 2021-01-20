@@ -140,6 +140,7 @@ class Labyrinth:
 
         step(initial_position, temp_labyrinth)  # Builds the possible_positions_paths
 
+        # Builds the possible_paths list with Path objects
         for path in possible_positions_paths:
             possible_paths.append(Path(path, self))
 
@@ -148,6 +149,7 @@ class Labyrinth:
 
 def path_option(option, labyrinth):
     """
+    This function returns one Path object according to the option
     :type option: int
     :type labyrinth: Labyrinth
     """
@@ -178,7 +180,7 @@ def path_option(option, labyrinth):
 
 def aux_print(temp, to_print):
     """
-    This function prints the parameters in the terminal and in a file if needed
+    This function prints the parameter in the terminal and in a file if needed
     :type temp: TextIO
     :type to_print:  Any
     """
