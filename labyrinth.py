@@ -33,6 +33,7 @@ class Path:
         self.duration = 0
         time_sqrt = 1
         available_treasures = labyrinth.treasures
+
         for x, pos in enumerate(path):
             if x > 0:
                 self.duration += time_sqrt**2
@@ -59,10 +60,8 @@ class Labyrinth:
         self.destination = None
         self.labyrinth_matrix = []
         self.treasures = []
-
         lab_size = self.source_file[0].split()
         lab_size = [int(elem) for elem in lab_size]
-
         for line in self.source_file[1:lab_size[0] + 1]:
             self.labyrinth_matrix.append([True if elem == '.' else False for elem in line])
         for line in self.labyrinth_matrix:
@@ -192,7 +191,6 @@ try:
     exit_file = open(sys.argv[3], 'w+')
 except IndexError:
     exit_file = False
-
 a = Labyrinth(sys.argv[1])
 chosen_path = path_option(int(sys.argv[2]), a)
 aux_print(exit_file, str(len(chosen_path.path)) + ' ' + str(chosen_path.duration) + '\n')
