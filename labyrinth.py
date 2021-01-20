@@ -59,7 +59,7 @@ class Labyrinth:
         self.destination = None
         self.labyrinth_matrix = []
         self.treasures = []
-
+a
         lab_size = self.source_file[0].split()
         lab_size = [int(elem) for elem in lab_size]
 
